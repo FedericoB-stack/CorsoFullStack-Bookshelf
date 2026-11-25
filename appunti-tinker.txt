@@ -1,10 +1,8 @@
 APPUNTI TINKER - esercizi giorno 09          (avvio: php artisan tinker)
 =================================================================================================================
 
-DOMANDA                                                    | CODICE ELOQUENT
------------------------------------------------------------+-----------------------------------------------------
 1. Quanti libri ci sono? Quanti generi?                    | 
-    Book::count()                                                      Genre::count()
+    Book::count ()                                                      Genre::count()
 -----------------------------------------------------------+-----------------------------------------------------
 2. I titoli dei libri pubblicati prima del 1960,         
    in ordine di anno.                                     
