@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,5 +68,26 @@ class Book extends Model
             $q->where('title', 'like', "%{$term}%")
               ->orWhereHas('authors', fn (Builder $a) => $a->where('last_name', 'like', "%{$term}%"));
         });
+    }
+
+    // ---------------- Esercizi del giorno 9 ----------------
+
+    // 9.2 accessor: $book->is_long
+    protected function isLong(): Attribute
+    {
+        return Attribute::make(get: fn () => $this->pages > 400);
+    }
+
+    // 9.2 scope: Book::publishedBetween(1960, 1970)
+    #[Scope]
+    protected function publishedBetween(Builder $query, int $from, int $to): void
+    {
+        $query->whereBetween('year', [$from, $to]);
+    }
+
+    // 9.4
+    public function loans(): HasMany
+    {
+        return $this->hasMany(Loan::class);
     }
 }

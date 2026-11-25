@@ -1,0 +1,63 @@
+APPUNTI TINKER - esercizi giorno 09          (avvio: php artisan tinker)
+=================================================================================================================
+
+DOMANDA                                                    | CODICE ELOQUENT
+-----------------------------------------------------------+-----------------------------------------------------
+1. Quanti libri ci sono? Quanti generi?                    | 
+    Book::count()                                                      Genre::count()
+-----------------------------------------------------------+-----------------------------------------------------
+2. I titoli dei libri pubblicati prima del 1960,         
+   in ordine di anno.                                     
+   Book::where('year','<', 1960)->orderBy('year')->pluck('title')                                                 -----------------------------------------------------------+-----------------------------------------------------
+3. Il libro con id 8: titolo, nome del genere, 
+   nomi degli autori.  
+   Book::select('id', 'title', 'genre_id')->with(['genre:id,name', 'authors:id,first_name,last_name'])->find(13)                                   
+-----------------------------------------------------------+-----------------------------------------------------
+4. Crea un genere "Fantascienza", poi eliminalo.            
+   Genre::create(['name' => 'Fantascienza'])->save()  UniqueConstraintViolationException                                             
+-----------------------------------------------------------+-----------------------------------------------------
+5. Prova a creare due generi con lo stesso nome:          
+   che errore ottieni, e quale riga della migration        
+   lo provoca?  
+   
+   Genre::create(['name' => 'Doppione'])
+   Genre::create(['name' => 'Doppione'])
+   $table->string('name', 50)->unique(); (riga della migration)
+
+   stesso errore di prima
+                                              |
+-----------------------------------------------------------+-----------------------------------------------------
+9.3 – Relazioni in tinker (30 minuti)
+1. I titoli dei libri di Italo Calvino, partendo dall'autore.
+Author::where('last_name', 'Calvino')->first()->books->pluck('title')
+-----------------------------------------------------------
+
+2. Il genere del libro "Il nome della rosa".
+Book::where('title', 'Il nome della rosa')->first()->genre->name
+-----------------------------------------------------------
+3. Quanti libri ha il genere Giallo?
+Genre::where('name', 'Giallo')->first()->books()->count()
+-----------------------------------------------------------
+4. Aggiungi un secondo autore a un libro con `attach`, poi toglilo con `detach`.
+
+$book = Book::where('title', 'Il nome della rosa')->first()
+$author = Author::where('last_name', 'Calvino')->first()
+$book->authors()->attach($author->id)
+$book->authors()->pluck('last_name')
+$book->authors()->detach($author->id)
+$book->authors()->pluck('last_name')
+
+-----------------------------------------------------------
+5. Assegna un altro genere a un libro con `$book->genre()->associate($genre); $book->save();`
+   e verifica la colonna `genre_id` in HeidiSQL.
+   $book = Book::where('title', 'Il nome della rosa')->first()
+$genre = Genre::where('name', 'Saggio')->first()
+$book->genre()->associate($genre); $book->save();
+$book->genre_id
+
+-----------------------------------------------------------
+-----------------------------------------------------------
+
+9.4.3
+$user = User::where('email', 'demo@example.com')->first()
+$user->loans()->create(['book_id' => 1, 'loaned_at' => now()])

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,4 +28,12 @@ class Author extends Model
             get: fn () => "{$this->first_name} {$this->last_name}",
         );
     }
+
+    // 9.2 scope: Author::italian()->count()
+    #[Scope]
+    protected function italian(Builder $query): void
+    {
+        $query->where('nationality', 'italiana');
+    }
+    //Author::italian()->count()
 }
