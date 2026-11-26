@@ -1,58 +1,113 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Bookshelf
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Applicazione web in **PHP e Laravel 13** per consultare un catalogo di libri con i loro autori e generi. Progetto sviluppato durante il corso *Sviluppatore Full Stack e AI System Integrator* per mettere in pratica l'architettura MVC e le relazioni tra tabelle con Eloquent ORM.
 
-## About Laravel
+> **Stato del progetto:** in sviluppo. Al momento l'app è in sola lettura (elenco, dettaglio e ricerca). Le operazioni di creazione, modifica ed eliminazione sono previste nei prossimi passi.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Funzionalità attuali
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Elenco dei libri con **ricerca** per titolo o cognome dell'autore
+- **Paginazione** (10 libri per pagina) che mantiene il termine cercato nei link
+- Pagina di dettaglio del libro, con autori (collegati alle loro pagine), genere, anno, pagine, ISBN e chi lo ha inserito
+- Elenco degli autori, ordinati per cognome, con il numero di libri di ciascuno
+- Pagina di dettaglio dell'autore, con i suoi libri ordinati per anno di pubblicazione
+- Risposta 404 automatica se il libro o l'autore richiesto non esiste
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Cosa ho messo in pratica
 
-## Learning Laravel
+- Architettura **MVC**: route, controller, modelli e viste Blade con un layout riutilizzabile (componente `x-layout`)
+- Output delle viste sempre escapato con `{{ }}` (protezione da XSS)
+- Vista di **paginazione personalizzata** in HTML semplice
+- **Relazioni Eloquent**: uno-a-molti (genere → libri), molti-a-molti (autori ↔ libri) e appartenenza a un utente
+- **Eager loading** (`with`, `load`, `withCount`) per evitare il problema delle query N+1
+- **Query scope** (ricerca per titolo/autore, libri pubblicati in un intervallo di anni, autori italiani)
+- **Accessor** (`full_name` dell'autore, `is_long` per i libri oltre 400 pagine) e **cast** dei campi
+- **Route model binding** e protezione dal mass assignment con `#[Fillable]`
+- **Migrazioni** con chiavi esterne (`nullOnDelete`, `cascadeOnDelete`, `restrictOnDelete`), indici, vincoli di unicità e chiave primaria composta nella tabella pivot
+- **Seeder e factory** per popolare il database con dati reali e dati di prova
+- Modello `Loan` per i prestiti (non ancora collegato all'interfaccia)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Tecnologie
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+PHP · Laravel 13 · MariaDB · Eloquent ORM · Blade (componenti) · Composer · Vite · PHPUnit · Git/GitHub
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Struttura del database
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```mermaid
+erDiagram
+    GENRE ||--o{ BOOK : "ha"
+    USER ||--o{ BOOK : "associato a"
+    AUTHOR }o--o{ BOOK : "scrive (tabella author_book)"
+    USER ||--o{ LOAN : "prende"
+    BOOK ||--o{ LOAN : "è prestato in"
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+| Tabella | Campi principali |
+| --- | --- |
+| `books` | title, isbn (univoco), year, pages, cover_path, genre_id, user_id |
+| `authors` | first_name, last_name, nationality, birth_year |
+| `genres` | name |
+| `author_book` | tabella pivot tra autori e libri |
+| `loans` | user_id, book_id, loaned_at, returned_at |
+| `users` | name, email (univoco), password (tabella standard di Laravel) |
 
-## Contributing
+Chiavi esterne: se un genere o un utente viene eliminato, nei libri il campo diventa `NULL`; eliminando un libro o un autore si eliminano le righe della tabella pivot; un libro con prestiti non può essere eliminato.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Rotte disponibili
 
-## Code of Conduct
+| Metodo | URL | Descrizione |
+| --- | --- | --- |
+| GET | `/` | Reindirizza all'elenco dei libri |
+| GET | `/books` | Elenco libri (con `?q=` per la ricerca) |
+| GET | `/books/{book}` | Dettaglio libro |
+| GET | `/authors` | Elenco autori |
+| GET | `/authors/{author}` | Dettaglio autore |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Come avviarlo in locale
 
-## Security Vulnerabilities
+Servono PHP, Composer, Node.js e un server MariaDB.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+git clone https://github.com/FedericoB-stack/CorsoFullStack-Bookshelf.git
+cd CorsoFullStack-Bookshelf
 
-## License
+composer install
+npm install
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+cp .env.example .env
+php artisan key:generate
+```
+
+Crea un database vuoto in MariaDB (ad esempio `bookshelf`) e imposta i dati di connessione nel file `.env`:
+
+```env
+DB_CONNECTION=mariadb
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=bookshelf
+DB_USERNAME=il_tuo_utente
+DB_PASSWORD=la_tua_password
+```
+
+Poi esegui le migrazioni e avvia il server:
+
+```bash
+php artisan migrate --seed
+php artisan serve
+```
+
+Il seeder crea un utente di prova (`demo@example.com`, password `password`), 5 generi, 9 autori e 15 libri reali, più alcuni dati generati dalle factory per vedere la paginazione. Per ricreare il database da zero: `php artisan migrate:fresh --seed`.
+
+L'app sarà disponibile su `http://127.0.0.1:8000`.
+
+## Prossimi passi
+
+- [ ] Creazione, modifica ed eliminazione dei libri (CRUD completo)
+- [ ] Validazione dei dati dei form
+- [ ] Autenticazione degli utenti
+- [ ] Upload della copertina del libro
+- [ ] Gestione dei prestiti tramite il modello `Loan`
+
+## Autore
+
+Federico Balducci · [GitHub](https://github.com/FedericoB-stack)
